@@ -1,0 +1,96 @@
+services:
+  api:
+    profiles:
+      - prod
+    container_name: order-product-api
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
+    restart: always
+    ports:
+      - "44030:44030"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    env_file:
+      - .env
+
+  postgres:
+    profiles:
+      - prod
+    image: postgres:16-alpine
+    container_name: order-product-db
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - order-product_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  migrate:
+    profiles:
+      - prod
+    container_name: order-product-migrate
+    build:
+      context: .
+      dockerfile: Migrate.Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  redis:
+    profiles:
+      - prod
+    image: redis:8.6-alpine
+    container_name: order-product-redis
+    restart: always
+    ports:
+      - "6382:6379"
+    volumes:
+      - order-product_redis_data:/data
+    command: [ "redis-server", "--appendonly", "yes" ]
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  test-postgres:
+    profiles:
+      - test
+    image: postgres:16-alpine
+    container_name: test-payment-db
+    environment:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - test_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: "no"
+
+volumes:
+  test_pg_data:
+  order-product_pg_data:
+  order-product_redis_data:

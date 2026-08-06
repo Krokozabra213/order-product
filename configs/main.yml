@@ -1,0 +1,43 @@
+app:
+  name: 'order-product'
+  version: 'v1.0.0'
+
+grpc:
+  host: '0.0.0.0'
+  port: '44030'
+  readTimeout: '10s'
+  writeTimeout: '10s'
+  maxHeaderBytes: 1
+
+postgres:
+  sslMode: 'disable'
+  connectTimeout: '5s'
+  maxConns: 20
+  minConns: 2
+
+redis:
+  addr: redis:6379
+  password: 'test'
+  database: 0
+  prefix: 'order-product'
+  poolSize: 10
+  minIdleConns: 2
+
+balance:
+  addr: 'balance:44070'
+
+slog:
+  structured: true
+  level: -4
+
+telemetry:
+  logs: true
+  metrics: false
+  traces: false
+  endpoint: otel-collector:4317
+  tracesSampleRate: 1.0
+  logToStdout: true
+  stdoutLogLevel: -4
+  sampleLogs: true
+  unsampledLogLevel: 0
+  insecure: true
